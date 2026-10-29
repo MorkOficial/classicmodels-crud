@@ -1,0 +1,9 @@
+{
+  "name": "classicmodels-crud",
+  "version": "1.0.0",
+  "description": "API para aprender operaciones CRUD con Node.js y MySQL",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/app.js"
+  }
+}
