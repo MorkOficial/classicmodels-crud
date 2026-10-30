@@ -1,13 +1,21 @@
-const http = require("node:http");
+const express = require("express");
 
-const server = http.createServer((request, response) => {
-  response.writeHead(200, {
-    "Content-Type": "text/plain; charset=utf-8"
-  });
+const app = express();
+const PORT = 3000;
 
-  response.end("¡Hola! El servidor Node.js está funcionando.");
+// Permite que Express lea cuerpos de solicitudes en formato JSON.
+app.use(express.json());
+
+app.get("/", (req, res) => {
+  res.send("¡Hola! El servidor Express está funcionando.");
 });
 
-server.listen(3000, "0.0.0.0", () => {
-  console.log("Servidor escuchando en el puerto 3000");
+app.get("/api/customers", (req, res) => {
+  res.json({
+    mensaje: "Ruta preparada; en el siguiente paso la conectaremos a MySQL."
+  });
+});
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
