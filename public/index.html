@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Clientes - ClassicModels</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; color: #333; }
+        h1 { color: #1e293b; font-size: 1.5rem; text-align: center; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        
+        /* Encabezado con el botón general de edición */
+        .header-seccion { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        
+        /* Formulario responsivo */
+        form { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 10px; }
+        input, button { padding: 10px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 4px; width: 100%; }
+        button { cursor: pointer; }
+        .btn-primary { background-color: #2563eb; color: white; border: none; font-weight: bold; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        
+        /* Botones de control general */
+        .btn-global-editar { background-color: #f59e0b; color: white; border: none; padding: 8px 14px; border-radius: 4px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; width: auto; }
+        .btn-global-editar:hover { background-color: #d97706; }
+        
+        .btn-cancel { background-color: #64748b; color: white; border: none; display: none; }
+        .form-botones { display: flex; gap: 10px; }
+
+        /* Tabla responsiva */
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 600px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; font-size: 13px; }
+        th { background-color: #f8fafc; color: #475569; }
+        
+        /* Acciones en tabla (ocultas por defecto hasta activar el modo global) */
+        .columna-acciones { display: none; }
+        .btn-accion { background: none; border: none; cursor: pointer; font-size: 13px; padding: 5px 8px; border-radius: 4px; font-weight: bold; }
+        .btn-tabla-editar { color: #2563eb; background-color: #eff6ff; border: 1px solid #bfdbfe; }
+        .btn-tabla-eliminar { color: #dc2626; background-color: #ffeeef; border: 1px solid #fecaca; margin-left: 5px; }
+
+        .paginacion-container { margin-top: 15px; display: flex; justify-content: space-between; align-items: center; min-height: 40px; }
+        .btn-pag { background-color: #475569; color: white; border: none; padding: 8px 14px; border-radius: 4px; font-size: 13px; }
+
+        @media (min-width: 768px) {
+            body { margin: 40px; }
+            h1 { font-size: 2rem; text-align: left; }
+            .card { padding: 20px; }
+            form { grid-template-columns: repeat(2, 1fr); }
+            .form-botones { grid-column: span 2; }
+            th, td { padding: 12px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Gestión de Clientes - ClassicModels</h1>
+    
+    <!-- Formulario para Registrar o Actualizar -->
+    <div class="card">
+        <h3 id="form-titulo">Registrar Nuevo Cliente</h3>
+        <form id="form-cliente">
+            <input type="number" id="customerNumber" placeholder="ID de Cliente (ej. 9999)" required>
+            <input type="text" id="customerName" placeholder="Nombre de la Empresa" required>
+            <input type="text" id="contactLastName" placeholder="Apellido del Contacto" required>
+            <input type="text" id="contactFirstName" placeholder="Nombre del Contacto" required>
+            <input type="text" id="city" placeholder="Ciudad" required>
+            <input type="text" id="country" placeholder="País" required>
+            
+            <div class="form-botones">
+                <button type="submit" id="btn-submit" class="btn-primary">Guardar Cliente</button>
+                <button type="button" id="btn-cancelar" class="btn-cancel" onclick="resetFormulario()">Cancelar / Volver ❌</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla con Botón General de Edición -->
+    <div class="card">
+        <div class="header-seccion">
+            <h3 id="estado-api" style="margin:0;">Cargando clientes...</h3>
+            <!-- Botón general con el lápiz para habilitar la edición global -->
+            <button class="btn-global-editar" onclick="alternarModoEdicionGlobal()">
+                ✏️ Editar datos / usuarios
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre de Cliente</th>
+                        <th>Contacto</th>
+                        <th>Ciudad</th>
+                        <th>País</th>
+                        <th class="columna-acciones">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-clientes">
+                    <!-- Datos dinámicos -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación Inteligente con Ocultamiento Automático -->
+        <div class="paginacion-container">
+            <button id="btn-Anterior" class="btn-pag" style="display: none;" onclick="cambiarPagina(-1)">Anterior</button>
+            <span id="info-paginacion" style="font-size: 13px; color: #475569; margin: 0 auto;">Cargando...</span>
+            <button id="btn-Siguiente" class="btn-pag" style="display: none;" onclick="cambiarPagina(1)">Siguiente</button>
+        </div>
+    </div>
+
+    <script>
+        let paginaActual = 1;
+        const limitePorPagina = 10;
+        let idClienteEnEdicion = null;
+        let modoEdicionGlobalActivado = false;
+
+        function cargarClientes(pagina = 1) {
+            fetch(`/api/customers?page=${pagina}&limit=${limitePorPagina}`)
+                .then(response => response.json())
+                .then(data => {
+                    const estadoEl = document.getElementById('estado-api');
+                    if (estadoEl && !modoEdicionGlobalActivado) {
+                        estadoEl.innerText = data.mensaje || "¡Conectado a MySQL con éxito!";
+                    }
+
+                    const tbody = document.getElementById('tabla-clientes');
+                    tbody.innerHTML = '';
+                    
+                    data.clientes.forEach(cliente => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${cliente.customerNumber}</td>
+                            <td>${cliente.customerName}</td>
+                            <td>${cliente.contactFirstName} ${cliente.contactLastName}</td>
+                            <td>${cliente.city}</td>
+                            <td>${cliente.country}</td>
+                            <td class="columna-acciones">
+                                <button class="btn-accion btn-tabla-editar" onclick="cargarDatosEnFormulario(${cliente.customerNumber}, '${cliente.customerName}', '${cliente.contactLastName}', '${cliente.contactFirstName}', '${cliente.city}', '${cliente.country}')">Seleccionar</button>
+                                <button class="btn-accion btn-tabla-eliminar" onclick="eliminarCliente(${cliente.customerNumber})">Eliminar</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    actualizarVisibilidadAcciones();
+
+                    paginaActual = data.currentPage;
+                    const totalPages = data.totalPages || 1;
+                    document.getElementById('info-paginacion').innerText = `Página ${paginaActual} de ${totalPages}`;
+                    
+                    // Ocultar o mostrar botón "Anterior" de forma inteligente
+                    const btnAnterior = document.getElementById('btn-Anterior');
+                    if (paginaActual > 1) {
+                        btnAnterior.style.display = 'inline-block';
+                    } else {
+                        btnAnterior.style.display = 'none';
+                    }
+
+                    // Ocultar o mostrar botón "Siguiente" de forma inteligente
+                    const btnSiguiente = document.getElementById('btn-Siguiente');
+                    if (paginaActual < totalPages) {
+                        btnSiguiente.style.display = 'inline-block';
+                    } else {
+                        btnSiguiente.style.display = 'none';
+                    }
+                })
+                .catch(err => {
+                    console.error('Error al cargar clientes:', err);
+                });
+        }
+
+        function cambiarPagina(direccion) {
+            const nuevaPagina = paginaActual + direccion;
+            if (nuevaPagina > 0) {
+                cargarClientes(nuevaPagina);
+            }
+        }
+
+        function alternarModoEdicionGlobal() {
+            modoEdicionGlobalActivado = !modoEdicionGlobalActivado;
+            actualizarVisibilidadAcciones();
+            
+            const estadoEl = document.getElementById('estado-api');
+            if (modoEdicionGlobalActivado) {
+                estadoEl.innerText = "Modo edición global activado. Selecciona un usuario de la tabla.";
+                estadoEl.style.color = "#d97706";
+            } else {
+                estadoEl.innerText = "¡Conectado a MySQL con éxito!";
+                estadoEl.style.color = "#333";
+                resetFormulario();
+            }
+        }
+
+        function actualizarVisibilidadAcciones() {
+            const elementosAcciones = document.querySelectorAll('.columna-acciones');
+            elementosAcciones.forEach(el => {
+                el.style.display = modoEdicionGlobalActivado ? 'table-cell' : 'none';
+            });
+        }
+
+        function cargarDatosEnFormulario(customerNumber, customerName, contactLastName, contactFirstName, city, country) {
+            idClienteEnEdicion = customerNumber;
+            document.getElementById('form-titulo').innerText = `Modificando Usuario (ID: ${customerNumber})`;
+            document.getElementById('btn-submit').innerText = 'Guardar Cambios';
+            document.getElementById('btn-cancelar').style.display = 'inline-block';
+
+            document.getElementById('customerNumber').value = customerNumber;
+            document.getElementById('customerNumber').disabled = true;
+            document.getElementById('customerName').value = customerName;
+            document.getElementById('contactLastName').value = contactLastName;
+            document.getElementById('contactFirstName').value = contactFirstName;
+            document.getElementById('city').value = city;
+            document.getElementById('country').value = country;
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetFormulario() {
+            idClienteEnEdicion = null;
+            document.getElementById('form-titulo').innerText = 'Registrar Nuevo Cliente';
+            document.getElementById('btn-submit').innerText = 'Guardar Cliente';
+            document.getElementById('btn-cancelar').style.display = 'none';
+            document.getElementById('customerNumber').disabled = false;
+            document.getElementById('form-cliente').reset();
+        }
+
+        document.getElementById('form-cliente').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const customerNumber = document.getElementById('customerNumber').value;
+            const datosCliente = {
+                customerNumber: customerNumber,
+                customerName: document.getElementById('customerName').value,
+                contactLastName: document.getElementById('contactLastName').value,
+                contactFirstName: document.getElementById('contactFirstName').value,
+                city: document.getElementById('city').value,
+                country: document.getElementById('country').value
+            };
+
+            const url = idClienteEnEdicion ? `/api/customers/${customerNumber}` : '/api/customers';
+            const metodo = idClienteEnEdicion ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: metodo,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datosCliente)
+                });
+                const resultado = await res.json();
+                
+                if (res.ok) {
+                    alert(resultado.mensaje);
+                    resetFormulario();
+                    cargarClientes(paginaActual);
+                } else {
+                    alert('Error: ' + resultado.error);
+                }
+            } catch (err) {
+                console.error('Error al guardar:', err);
+            }
+        });
+
+        async function eliminarCliente(customerNumber) {
+            if (!confirm(`¿Estás seguro de eliminar al cliente con ID ${customerNumber}?`)) return;
+
+            try {
+                const res = await fetch(`/api/customers/${customerNumber}`, {
+                    method: 'DELETE'
+                });
+                const resultado = await res.json();
+                
+                if (res.ok) {
+                    alert(resultado.mensaje);
+                    resetFormulario();
+                    cargarClientes(paginaActual);
+                } else {
+                    alert('Error: ' + resultado.error);
+                }
+            } catch (err) {
+                console.error('Error al eliminar:', err);
+            }
+        }
+
+        cargarClientes(paginaActual);
+    </script>
+</body>
+</html>
