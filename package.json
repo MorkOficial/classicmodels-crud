@@ -6,9 +6,12 @@
   "scripts": {
     "start": "node src/app.js"
   },
-"dependencies": {
-  "dotenv": "^16.4.7",
-  "express": "^5.1.0",
-  "mysql2": "^3.11.0"
-}
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "express-session": "^1.19.0",
+    "mysql2": "^3.11.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0"
+  }
 }

@@ -2,6 +2,9 @@ const express = require("express");
 const path = require("path");
 const mysql = require("mysql2/promise");
 require("dotenv").config();
+const session = require('express-session');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,6 +12,46 @@ const PORT = process.env.PORT || 3000;
 // Middleware para procesar JSON y datos de formularios
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ==========================================
+// CONFIGURACIÓN DE SESIONES Y PASSPORT
+// ==========================================
+
+// 1. Configurar express-session para mantener la sesión del usuario activa
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'clave_secreta_temporal',
+    resave: false,
+    saveUninitialized: false
+}));
+
+// 2. Inicializar Passport y el manejo de sesiones en la aplicación
+app.use(passport.initialize());
+app.use(passport.session());
+
+// 3. Configurar la estrategia de inicio de sesión con Google OAuth 2.0
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: "http://localhost:3000/auth/google/callback"
+  },
+  async (accessToken, refreshToken, profile, done) => {
+    try {
+      // Aquí recibes el perfil de Google del usuario (correo, nombre, etc.)
+      console.log("Usuario autenticado con Google:", profile.emails[0].value);
+      return done(null, profile);
+    } catch (err) {
+      return done(err, null);
+    }
+  }
+));
+
+// 4. Métodos para guardar y recuperar el usuario de la sesión
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((obj, done) => done(null, obj));
+
+// ==========================================
+// ARCHIVOS ESTÁTICOS Y FAVICON
+// ==========================================
 
 // Servir el favicon explícitamente antes de los archivos estáticos
 app.get("/favicon.png", (req, res) => {
@@ -27,6 +70,36 @@ const pool = mysql.createPool({
   port: process.env.DB_PORT || 3306
 });
 
+// ==========================================
+// RUTAS DE AUTENTICACIÓN GOOGLE OAUTH
+// ==========================================
+
+// Inicia el flujo de autenticación pidiendo perfil y correo a Google
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+// Callback: Google redirige aquí tras el login exitoso
+app.get('/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/' }),
+  (req, res) => {
+    // Autenticación correcta, redirigimos a la página principal (dashboard)
+    res.redirect('/');
+  }
+);
+
+// Ruta para cerrar sesión del usuario
+app.get('/logout', (req, res) => {
+  req.logout((err) => {
+    if (err) { return next(err); }
+    res.redirect('/');
+  });
+});
+
+// ==========================================
+// RUTAS DE LA API (CUSTOMERS CRUD)
+// ==========================================
+
 // Ruta de la API para consultar los clientes con PAGINACIÓN (Read)
 app.get("/api/customers", async (req, res) => {
   try {
@@ -34,12 +107,10 @@ app.get("/api/customers", async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
 
-    // Obtener total de registros para calcular el total de páginas
     const [countResult] = await pool.query("SELECT COUNT(*) as total FROM customers");
     const totalRows = countResult[0].total;
     const totalPages = Math.ceil(totalRows / limit);
 
-    // Obtener solo la página actual de registros
     const query = "SELECT customerNumber, customerName, contactLastName, contactFirstName, city, country FROM customers LIMIT ? OFFSET ?";
     const [rows] = await pool.query(query, [limit, offset]);
 
@@ -60,7 +131,6 @@ app.post("/api/customers", async (req, res) => {
   try {
     const { customerNumber, customerName, contactLastName, contactFirstName, city, country } = req.body;
     
-    // Incluimos valores por defecto para campos NOT NULL requeridos en classicmodels (phone, addressLine1)
     const query = `
       INSERT INTO customers 
       (customerNumber, customerName, contactLastName, contactFirstName, phone, addressLine1, city, country) 
@@ -74,10 +144,11 @@ app.post("/api/customers", async (req, res) => {
     res.status(500).json({ error: "No se pudo registrar el cliente" });
   }
 });
-// AÑADE ESTO: Ruta para actualizar un cliente existente
+
+// Ruta para actualizar un cliente existente (Update)
 app.put("/api/customers/:id", async (req, res) => {
   try {
-    const { id } = req.params; // Capturamos el ID que viene en la URL
+    const { id } = req.params;
     const { customerName, contactLastName, contactFirstName, city, country } = req.body; 
     
     const query = `
@@ -93,13 +164,14 @@ app.put("/api/customers/:id", async (req, res) => {
     res.status(500).json({ error: "No se pudo actualizar el cliente" });
   }
 });
-// AÑADE ESTO: Ruta para eliminar un cliente por su ID
+
+// Ruta para eliminar un cliente por su ID (Delete)
 app.delete("/api/customers/:id", async (req, res) => {
   try {
-    const { id } = req.params; // Capturamos el ID del cliente a borrar
+    const { id } = req.params;
     
     const query = "DELETE FROM customers WHERE customerNumber = ?";
-    await pool.query(query, [id]); // Ejecutamos el borrado en MySQL
+    await pool.query(query, [id]);
     
     res.json({ mensaje: "¡Cliente eliminado con éxito!" });
   } catch (error) {
@@ -107,6 +179,7 @@ app.delete("/api/customers/:id", async (req, res) => {
     res.status(500).json({ error: "No se pudo eliminar el cliente." });
   }
 });
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
