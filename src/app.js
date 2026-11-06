@@ -10,6 +10,11 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Servir el favicon explícitamente antes de los archivos estáticos
+app.get("/favicon.png", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/favicon.png"));
+});
+
 // Servir archivos estáticos de la carpeta public
 app.use(express.static(path.join(__dirname, "../public")));
 
