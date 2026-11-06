@@ -13,6 +13,41 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Configuración de sesiones y Passport
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'clave_secreta_temporal',
+    resave: false,
+    saveUninitialized: false
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: "http://localhost:3000/auth/google/callback"
+  },
+  async (accessToken, refreshToken, profile, done) => {
+    try {
+      console.log("Usuario autenticado con Google:", profile.emails[0].value);
+      return done(null, profile);
+    } catch (err) {
+      return done(err, null);
+    }
+  }
+));
+
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((obj, done) => done(obj, done));
+
+// Middleware para verificar si el usuario está autenticado
+function ensureAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.status(401).json({ error: "No autorizado. Inicia sesión con Google." });
+}
 // ==========================================
 // CONFIGURACIÓN DE SESIONES Y PASSPORT
 // ==========================================
