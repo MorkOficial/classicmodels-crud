@@ -13,7 +13,9 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Configuración de sesiones y Passport
+// ==========================================
+// CONFIGURACIÓN DE SESIONES Y PASSPORT
+// ==========================================
 app.use(session({
     secret: process.env.SESSION_SECRET || 'clave_secreta_temporal',
     resave: false,
@@ -46,57 +48,21 @@ function ensureAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
         return next();
     }
-    res.status(401).json({ error: "No autorizado. Inicia sesión con Google." });
+    res.status(401).json({ error: "No autorizado. Inicia sesión con Google para continuar." });
 }
-// ==========================================
-// CONFIGURACIÓN DE SESIONES Y PASSPORT
-// ==========================================
-
-// 1. Configurar express-session para mantener la sesión del usuario activa
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'clave_secreta_temporal',
-    resave: false,
-    saveUninitialized: false
-}));
-
-// 2. Inicializar Passport y el manejo de sesiones en la aplicación
-app.use(passport.initialize());
-app.use(passport.session());
-
-// 3. Configurar la estrategia de inicio de sesión con Google OAuth 2.0
-passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/auth/google/callback"
-  },
-  async (accessToken, refreshToken, profile, done) => {
-    try {
-      // Aquí recibes el perfil de Google del usuario (correo, nombre, etc.)
-      console.log("Usuario autenticado con Google:", profile.emails[0].value);
-      return done(null, profile);
-    } catch (err) {
-      return done(err, null);
-    }
-  }
-));
-
-// 4. Métodos para guardar y recuperar el usuario de la sesión
-passport.serializeUser((user, done) => done(null, user));
-passport.deserializeUser((obj, done) => done(null, obj));
 
 // ==========================================
 // ARCHIVOS ESTÁTICOS Y FAVICON
 // ==========================================
-
-// Servir el favicon explícitamente antes de los archivos estáticos
 app.get("/favicon.png", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/favicon.png"));
 });
 
-// Servir archivos estáticos de la carpeta public
 app.use(express.static(path.join(__dirname, "../public")));
 
-// Crear la conexión a la base de datos usando variables de entorno
+// ==========================================
+// BASE DE DATOS
+// ==========================================
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -108,22 +74,17 @@ const pool = mysql.createPool({
 // ==========================================
 // RUTAS DE AUTENTICACIÓN GOOGLE OAUTH
 // ==========================================
-
-// Inicia el flujo de autenticación pidiendo perfil y correo a Google
 app.get('/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
-// Callback: Google redirige aquí tras el login exitoso
 app.get('/auth/google/callback', 
   passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
-    // Autenticación correcta, redirigimos a la página principal (dashboard)
     res.redirect('/');
   }
 );
 
-// Ruta para cerrar sesión del usuario
 app.get('/logout', (req, res) => {
   req.logout((err) => {
     if (err) { return next(err); }
@@ -135,7 +96,7 @@ app.get('/logout', (req, res) => {
 // RUTAS DE LA API (CUSTOMERS CRUD)
 // ==========================================
 
-// Ruta de la API para consultar los clientes con PAGINACIÓN (Read)
+// Leer clientes (Pública)
 app.get("/api/customers", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -161,8 +122,8 @@ app.get("/api/customers", async (req, res) => {
   }
 });
 
-// Ruta de la API para registrar un nuevo cliente (Create)
-app.post("/api/customers", async (req, res) => {
+// Registrar cliente (Protegida con ensureAuthenticated)
+app.post("/api/customers", ensureAuthenticated, async (req, res) => {
   try {
     const { customerNumber, customerName, contactLastName, contactFirstName, city, country } = req.body;
     
@@ -180,8 +141,8 @@ app.post("/api/customers", async (req, res) => {
   }
 });
 
-// Ruta para actualizar un cliente existente (Update)
-app.put("/api/customers/:id", async (req, res) => {
+// Actualizar cliente (Protegida con ensureAuthenticated)
+app.put("/api/customers/:id", ensureAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     const { customerName, contactLastName, contactFirstName, city, country } = req.body; 
@@ -200,8 +161,8 @@ app.put("/api/customers/:id", async (req, res) => {
   }
 });
 
-// Ruta para eliminar un cliente por su ID (Delete)
-app.delete("/api/customers/:id", async (req, res) => {
+// Eliminar cliente (Protegida con ensureAuthenticated)
+app.delete("/api/customers/:id", ensureAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     
