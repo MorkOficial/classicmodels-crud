@@ -1,115 +1,133 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="h-full bg-slate-900 text-slate-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?v=2">
     <title>Gestión de Clientes - ClassicModels</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; color: #333; }
-        h1 { color: #1e293b; font-size: 1.5rem; text-align: center; }
-        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        
-        /* Encabezado con el botón general de edición */
-        .header-seccion { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
-        
-        /* Formulario responsivo */
-        form { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 10px; }
-        input, button { padding: 10px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 4px; width: 100%; }
-        button { cursor: pointer; }
-        .btn-primary { background-color: #2563eb; color: white; border: none; font-weight: bold; }
-        .btn-primary:hover { background-color: #1d4ed8; }
-        
-        /* Botones de control general */
-        .btn-global-editar { background-color: #f59e0b; color: white; border: none; padding: 8px 14px; border-radius: 4px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; width: auto; }
-        .btn-global-editar:hover { background-color: #d97706; }
-        
-        .btn-cancel { background-color: #64748b; color: white; border: none; display: none; }
-        .form-botones { display: flex; gap: 10px; }
-
-        /* Tabla responsiva */
-        .table-responsive { width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 600px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; font-size: 13px; }
-        th { background-color: #f8fafc; color: #475569; }
-        
-        /* Acciones en tabla (ocultas por defecto hasta activar el modo global) */
+        /* Ocultar acciones por defecto */
         .columna-acciones { display: none; }
-        .btn-accion { background: none; border: none; cursor: pointer; font-size: 13px; padding: 5px 8px; border-radius: 4px; font-weight: bold; }
-        .btn-tabla-editar { color: #2563eb; background-color: #eff6ff; border: 1px solid #bfdbfe; }
-        .btn-tabla-eliminar { color: #dc2626; background-color: #ffeeef; border: 1px solid #fecaca; margin-left: 5px; }
-
-        .paginacion-container { margin-top: 15px; display: flex; justify-content: space-between; align-items: center; min-height: 40px; }
-        .btn-pag { background-color: #475569; color: white; border: none; padding: 8px 14px; border-radius: 4px; font-size: 13px; }
-
-        @media (min-width: 768px) {
-            body { margin: 40px; }
-            h1 { font-size: 2rem; text-align: left; }
-            .card { padding: 20px; }
-            form { grid-template-columns: repeat(2, 1fr); }
-            .form-botones { grid-column: span 2; }
-            th, td { padding: 12px; font-size: 14px; }
-        }
     </style>
-<link rel="icon" href="/favicon.png" type="image/png">
 </head>
-<body>
-    <h1>Gestión de Clientes - ClassicModels</h1>
-    
-    <!-- Formulario para Registrar o Actualizar -->
-    <div class="card">
-        <h3 id="form-titulo">Registrar Nuevo Cliente</h3>
-        <form id="form-cliente">
-            <input type="number" id="customerNumber" placeholder="ID de Cliente (ej. 9999)" required>
-            <input type="text" id="customerName" placeholder="Nombre de la Empresa" required>
-            <input type="text" id="contactLastName" placeholder="Apellido del Contacto" required>
-            <input type="text" id="contactFirstName" placeholder="Nombre del Contacto" required>
-            <input type="text" id="city" placeholder="Ciudad" required>
-            <input type="text" id="country" placeholder="País" required>
-            
-            <div class="form-botones">
-                <button type="submit" id="btn-submit" class="btn-primary">Guardar Cliente</button>
-                <button type="button" id="btn-cancelar" class="btn-cancel" onclick="resetFormulario()">Cancelar / Volver ❌</button>
+<body class="min-h-full flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header / Navbar -->
+    <header class="border-b border-slate-800 bg-slate-950/70 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <img src="/favicon.png?v=2" alt="Favicon" class="w-8 h-8 rounded-lg shadow-md" />
+                <span class="font-bold text-xl tracking-tight bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+                    ClassicModels Dashboard
+                </span>
             </div>
-        </form>
-    </div>
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Homelab Server
+                </span>
+            </div>
+        </div>
+    </header>
 
-    <!-- Tabla con Botón General de Edición -->
-    <div class="card">
-        <div class="header-seccion">
-            <h3 id="estado-api" style="margin:0;">Cargando clientes...</h3>
-            <!-- Botón general con el lápiz para habilitar la edición global -->
-            <button class="btn-global-editar" onclick="alternarModoEdicionGlobal()">
-                ✏️ Editar datos / usuarios
-            </button>
+    <!-- Contenido Principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- Formulario (Registrar / Modificar) -->
+        <div class="bg-slate-800/40 border border-slate-800 rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm p-6">
+            <div class="mb-6">
+                <h3 id="form-titulo" class="text-xl font-semibold text-white tracking-tight">Registrar Nuevo Cliente</h3>
+                <p class="text-sm text-slate-400 mt-1">Llena los datos para agregar un registro o selecciona uno de la tabla para editar.</p>
+            </div>
+
+            <form id="form-cliente" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">ID del Cliente</label>
+                    <input type="number" id="customerNumber" placeholder="ej. 9999" required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 disabled:bg-slate-950 transition" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Nombre de la Empresa</label>
+                    <input type="text" id="customerName" placeholder="Nombre Comercial" required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Nombre del Contacto</label>
+                    <input type="text" id="contactFirstName" placeholder="Nombre" required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Apellido del Contacto</label>
+                    <input type="text" id="contactLastName" placeholder="Apellido" required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Ciudad</label>
+                    <input type="text" id="city" placeholder="Ciudad" required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">País</label>
+                    <input type="text" id="country" placeholder="País" required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" />
+                </div>
+
+                <div class="form-botones md:col-span-2 flex gap-3 pt-2">
+                    <button type="submit" id="btn-submit" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-xl text-sm transition shadow-lg shadow-indigo-600/20">
+                        Guardar Cliente
+                    </button>
+                    <button type="button" id="btn-cancelar" onclick="resetFormulario()" class="bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-slate-200 font-medium px-5 py-2.5 rounded-xl text-sm transition hidden">
+                        Cancelar / Volver ❌
+                    </button>
+                </div>
+            </form>
         </div>
 
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre de Cliente</th>
-                        <th>Contacto</th>
-                        <th>Ciudad</th>
-                        <th>País</th>
-                        <th class="columna-acciones">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-clientes">
-                    <!-- Datos dinámicos -->
-                </tbody>
-            </table>
+        <!-- Sección de Tabla -->
+        <div class="bg-slate-800/40 border border-slate-800 rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
+            <div class="p-6 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h3 id="estado-api" class="text-lg font-semibold text-white">Cargando clientes...</h3>
+                    <p class="text-xs text-slate-400">Listado interactivo conectado a la base de datos MariaDB.</p>
+                </div>
+                <button class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2 transition" onclick="alternarModoEdicionGlobal()">
+                    ✏️ Editar datos / usuarios
+                </button>
+            </div>
+
+            <!-- Tabla -->
+            <div class="table-responsive overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-slate-900/60 text-slate-400 border-b border-slate-800 text-xs font-semibold uppercase tracking-wider">
+                            <th class="py-3.5 px-6">ID</th>
+                            <th class="py-3.5 px-6">Nombre de Cliente</th>
+                            <th class="py-3.5 px-6">Contacto</th>
+                            <th class="py-3.5 px-6">Ciudad</th>
+                            <th class="py-3.5 px-6">País</th>
+                            <th class="columna-acciones py-3.5 px-6 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-clientes" class="divide-y divide-slate-800 text-slate-300">
+                        <!-- Carga dinámica -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            <div class="paginacion-container px-6 py-4 border-t border-slate-800 flex justify-between items-center bg-slate-900/30">
+                <button id="btn-Anterior" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-4 py-2 rounded-xl text-xs font-medium transition" style="display: none;" onclick="cambiarPagina(-1)">Anterior</button>
+                <span id="info-paginacion" class="text-xs text-slate-400 font-medium">Cargando...</span>
+                <button id="btn-Siguiente" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-4 py-2 rounded-xl text-xs font-medium transition" style="display: none;" onclick="cambiarPagina(1)">Siguiente</button>
+            </div>
         </div>
-        
-        <!-- Paginación Inteligente con Ocultamiento Automático -->
-        <div class="paginacion-container">
-            <button id="btn-Anterior" class="btn-pag" style="display: none;" onclick="cambiarPagina(-1)">Anterior</button>
-            <span id="info-paginacion" style="font-size: 13px; color: #475569; margin: 0 auto;">Cargando...</span>
-            <button id="btn-Siguiente" class="btn-pag" style="display: none;" onclick="cambiarPagina(1)">Siguiente</button>
-        </div>
-    </div>
+    </main>
+
+    <footer class="border-t border-slate-800/60 py-6 text-center text-xs text-slate-500">
+        ClassicModels CRUD &copy; 2026 — Desplegado en Homelab Proxmox
+    </footer>
 
     <script>
         let paginaActual = 1;
@@ -123,7 +141,8 @@
                 .then(data => {
                     const estadoEl = document.getElementById('estado-api');
                     if (estadoEl && !modoEdicionGlobalActivado) {
-                        estadoEl.innerText = data.mensaje || "¡Conectado a MySQL con éxito!";
+                        estadoEl.innerText = data.mensaje || "¡Conectado a MariaDB con éxito!";
+                        estadoEl.className = "text-lg font-semibold text-white";
                     }
 
                     const tbody = document.getElementById('tabla-clientes');
@@ -131,15 +150,16 @@
                     
                     data.clientes.forEach(cliente => {
                         const tr = document.createElement('tr');
+                        tr.className = "hover:bg-slate-800/50 transition";
                         tr.innerHTML = `
-                            <td>${cliente.customerNumber}</td>
-                            <td>${cliente.customerName}</td>
-                            <td>${cliente.contactFirstName} ${cliente.contactLastName}</td>
-                            <td>${cliente.city}</td>
-                            <td>${cliente.country}</td>
-                            <td class="columna-acciones">
-                                <button class="btn-accion btn-tabla-editar" onclick="cargarDatosEnFormulario(${cliente.customerNumber}, '${cliente.customerName}', '${cliente.contactLastName}', '${cliente.contactFirstName}', '${cliente.city}', '${cliente.country}')">Seleccionar</button>
-                                <button class="btn-accion btn-tabla-eliminar" onclick="eliminarCliente(${cliente.customerNumber})">Eliminar</button>
+                            <td class="py-3.5 px-6 font-mono text-xs text-indigo-400 font-semibold">${cliente.customerNumber}</td>
+                            <td class="py-3.5 px-6 font-medium text-white">${cliente.customerName}</td>
+                            <td class="py-3.5 px-6 text-slate-300">${cliente.contactFirstName} ${cliente.contactLastName}</td>
+                            <td class="py-3.5 px-6 text-slate-400">${cliente.city}</td>
+                            <td class="py-3.5 px-6 text-slate-400">${cliente.country}</td>
+                            <td class="columna-acciones py-3.5 px-6 text-right space-x-2">
+                                <button class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 px-3 py-1 rounded-lg text-xs font-semibold transition" onclick="cargarDatosEnFormulario(${cliente.customerNumber}, '${cliente.customerName}', '${cliente.contactLastName}', '${cliente.contactFirstName}', '${cliente.city}', '${cliente.country}')">Seleccionar</button>
+                                <button class="bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 px-3 py-1 rounded-lg text-xs font-semibold transition" onclick="eliminarCliente(${cliente.customerNumber})">Eliminar</button>
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -151,21 +171,11 @@
                     const totalPages = data.totalPages || 1;
                     document.getElementById('info-paginacion').innerText = `Página ${paginaActual} de ${totalPages}`;
                     
-                    // Ocultar o mostrar botón "Anterior" de forma inteligente
                     const btnAnterior = document.getElementById('btn-Anterior');
-                    if (paginaActual > 1) {
-                        btnAnterior.style.display = 'inline-block';
-                    } else {
-                        btnAnterior.style.display = 'none';
-                    }
+                    btnAnterior.style.display = paginaActual > 1 ? 'inline-block' : 'none';
 
-                    // Ocultar o mostrar botón "Siguiente" de forma inteligente
                     const btnSiguiente = document.getElementById('btn-Siguiente');
-                    if (paginaActual < totalPages) {
-                        btnSiguiente.style.display = 'inline-block';
-                    } else {
-                        btnSiguiente.style.display = 'none';
-                    }
+                    btnSiguiente.style.display = paginaActual < totalPages ? 'inline-block' : 'none';
                 })
                 .catch(err => {
                     console.error('Error al cargar clientes:', err);
@@ -186,10 +196,10 @@
             const estadoEl = document.getElementById('estado-api');
             if (modoEdicionGlobalActivado) {
                 estadoEl.innerText = "Modo edición global activado. Selecciona un usuario de la tabla.";
-                estadoEl.style.color = "#d97706";
+                estadoEl.className = "text-lg font-semibold text-amber-400";
             } else {
-                estadoEl.innerText = "¡Conectado a MySQL con éxito!";
-                estadoEl.style.color = "#333";
+                estadoEl.innerText = "¡Conectado a MariaDB con éxito!";
+                estadoEl.className = "text-lg font-semibold text-white";
                 resetFormulario();
             }
         }
